@@ -24,7 +24,7 @@ def process_pdf(pdf_file):
         embedding_dim = len(embeddings[0])
 
         store = MilvusStore(settings.MILVUS_HOST, settings.MILVUS_PORT)
-        store.create_collection()
+        store.create_collection(dim=embedding_dim)
         store.insert(embeddings, chunks)
 
         return True, "PDF processed and embedded successfully!"
@@ -33,29 +33,6 @@ def process_pdf(pdf_file):
     finally:
         os.unlink(tmp_path)
 
-    # Create a temporary file to save the uploaded PDF
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
-        tmp_file.write(pdf_file.getvalue())
-        tmp_path = tmp_file.name
-
-    try:
-        # Process the PDF
-        pdf_text = load_pdf(tmp_path)
-        chunks = list(split_text(pdf_text))
-
-        embedder = LLamaEmbedder()
-        embeddings = [embedder.embed(chunk) for chunk in chunks]
-
-        store = MilvusStore(settings.MILVUS_HOST, settings.MILVUS_PORT)
-        store.create_collection()
-        store.insert(embeddings, chunks)
-
-        return True, "PDF processed and embedded successfully!"
-    except Exception as e:
-        return False, f"Error processing PDF: {str(e)}"
-    finally:
-        # Clean up the temporary file
-        os.unlink(tmp_path)
 
 def main():
     st.title("PDF Document Processor")
