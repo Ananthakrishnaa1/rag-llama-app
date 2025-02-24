@@ -60,43 +60,45 @@ class MilvusStore:
         except Exception as e:
             raise Exception(f"Failed to create collection: {str(e)}")
         
-    def insert(self, embeddings, texts):
-        """
-        Insert embeddings and their corresponding texts into the collection
-        """
-        try:
-            data = [
-                {"embedding": embedding, "text": text}
-                for embedding, text in zip(embeddings, texts)
-            ]
-            self.collection.insert(data)
-            return True
-        except Exception as e:
-            raise Exception(f"Failed to insert data: {str(e)}")
+        
     
     def get_collection_stats(self):
-        """Returns statistics about the collection"""
+        """
+        Returns statistics about the collection including name, count and sample documents
+        
+        Returns:
+            dict: Collection statistics including name, count and samples
+        """
         try:
-            # Load collection
-            self.collection.load()
-            
-            # Get basic stats
+            if not utility.has_collection(self.collection_name):
+                raise Exception("Collection does not exist")
+                
+            # Load the collection if not already loaded
+            if self.collection is None:
+                self.collection = Collection(self.collection_name)
+                self.collection.load()
+
+            # Get collection stats
             stats = {
-                "name": self.collection_name,
-                "count": self.collection.num_entities,
-                "schema": self.collection.schema
+                'name': self.collection_name,
+                'count': self.collection.num_entities
             }
-            
-            # Get some sample entries
-            if self.collection.num_entities > 0:
+
+            # Get sample documents if collection is not empty
+            if stats['count'] > 0:
+                # Query some sample documents
                 results = self.collection.query(
-                    expr="id < 5",  # Get first few entries
-                    output_fields=["id", "text"],
-                    limit=5
+                    expr="id < 5",  # Get first 5 documents
+                    output_fields=["text"],
+                    consistency_level="Strong"
                 )
-                stats["samples"] = results
-            
+                stats['samples'] = [{'id': i, 'text': doc['text']} 
+                                  for i, doc in enumerate(results)]
+
             return stats
-            
         except Exception as e:
             raise Exception(f"Failed to get collection stats: {str(e)}")
+        finally:
+            # Release collection after use
+            if self.collection:
+                self.collection.release()
