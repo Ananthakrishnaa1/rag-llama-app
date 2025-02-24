@@ -1,0 +1,6 @@
+milvus
+pdfminer-six
+sentence-transformers
+ollama
+streamlit
+pymilvus
