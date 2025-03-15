@@ -5,7 +5,8 @@ from config import settings
 from data_processing.pdf_loader_1 import load_pdf
 from data_processing.text_splitter import split_text
 from embedding.llama_embedder import LLamaEmbedder
-from vector_store.milvus_store import MilvusStore
+# from vector_store.milvus_store import MilvusStore
+from vector_store.pinecone_store import PineconeStore
 
 def process_pdf(pdf_file):
     with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
@@ -21,10 +22,17 @@ def process_pdf(pdf_file):
         embeddings = [embedder.embed(chunk) for chunk in chunks]
         
         # Get dimension from first embedding
-        embedding_dim = len(embeddings[0])
+        # embedding_dim = len(embeddings[0])
 
-        store = MilvusStore(settings.MILVUS_HOST, settings.MILVUS_PORT)
-        store.create_collection(dim=embedding_dim)
+        # store = MilvusStore(settings.MILVUS_HOST, settings.MILVUS_PORT)
+        # store.create_collection(dim=embedding_dim)
+        
+        embeddings = [embedder.embed(chunk) for chunk in chunks]
+
+        store = PineconeStore(
+            api_key=settings.PINECONE_API_KEY,
+            index_name=settings.PINECONE_INDEX_NAME
+        )
         store.insert(embeddings, chunks)
 
         return True, "PDF processed and embedded successfully!"
@@ -57,7 +65,11 @@ def main():
     with tab2:
         if st.button("Show Collection Stats"):
             try:
-                store = MilvusStore(settings.MILVUS_HOST, settings.MILVUS_PORT)
+                # store = MilvusStore(settings.MILVUS_HOST, settings.MILVUS_PORT)
+                store = PineconeStore(
+                    api_key=settings.PINECONE_API_KEY,
+                    index_name=settings.PINECONE_INDEX_NAME
+                )
                 stats = store.get_collection_stats()
                 
                 st.write(f"Collection Name: {stats['name']}")

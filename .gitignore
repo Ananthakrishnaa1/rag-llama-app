@@ -35,3 +35,11 @@ ENV/
 .env
 *.pdf
 temp/
+
+# Milvus Volumes
+volumes/
+**/volumes/
+milvus-data/
+etcd-data/
+minio-data/
+rocksmq-data/
