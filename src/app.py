@@ -16,24 +16,23 @@ def process_pdf(pdf_file):
     try:
         # Process the PDF
         pdf_text = load_pdf(tmp_path)
-        chunks = list(split_text(pdf_text))
+        chunks_with_metadata = split_text(
+            pdf_text, chunk_size=1000, overlap=200, title="Leave Policy"
+        )
+        
+        # Extract content for embeddings
+        content_chunks = [chunk["content"] for chunk in chunks_with_metadata]
 
+        # Generate embeddings
         embedder = LLamaEmbedder()
-        embeddings = [embedder.embed(chunk) for chunk in chunks]
-        
-        # Get dimension from first embedding
-        # embedding_dim = len(embeddings[0])
+        embeddings = [embedder.embed(content) for content in content_chunks]
 
-        # store = MilvusStore(settings.MILVUS_HOST, settings.MILVUS_PORT)
-        # store.create_collection(dim=embedding_dim)
-        
-        embeddings = [embedder.embed(chunk) for chunk in chunks]
-
+        # Store embeddings along with metadata in Pinecone
         store = PineconeStore(
             api_key=settings.PINECONE_API_KEY,
             index_name=settings.PINECONE_INDEX_NAME
         )
-        store.insert(embeddings, chunks)
+        store.insert(embeddings, chunks_with_metadata)
 
         return True, "PDF processed and embedded successfully!"
     except Exception as e:
@@ -78,7 +77,7 @@ def main():
                 if stats.get('samples'):
                     st.write("Sample Documents:")
                     for doc in stats['samples']:
-                        st.text_area(f"Document ID: {doc['id']}", doc['text'], height=100)
+                        st.text_area(f"Document ID: {doc['id']}", doc['content'], height=100)
             except Exception as e:
                 st.error(f"Error fetching stats: {str(e)}")
 

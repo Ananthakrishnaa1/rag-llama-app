@@ -1,8 +1,8 @@
 from pinecone import Pinecone
-from typing import List
+from typing import List, Dict
 
 class PineconeStore:
-    def __init__(self, api_key: str, index_name: str = "quickstart"):
+    def __init__(self, api_key: str, index_name: str = "test"):
         # Initialize Pinecone client
         self.pc = Pinecone(api_key=api_key)
         self.index_name = index_name
@@ -19,9 +19,19 @@ class PineconeStore:
             )
             self.index = self.pc.Index(index_name)
 
-    def insert(self, embeddings: List[List[float]], texts: List[str]):
-        vectors = [(str(i), emb, {"text": text}) 
-                  for i, (emb, text) in enumerate(zip(embeddings, texts))]
+    def insert(self, embeddings: List[List[float]], chunks_with_metadata: List[Dict[str, str]]):
+        vectors = [
+            (
+                f"doc_{i+1}",  # Unique ID for the vector
+                emb,          # Embedding vector
+                {             # Metadata fields as key-value pairs
+                    "content": chunk["content"],  # Store content
+                    "title": chunk["title"],      # Store title
+                    "header": chunk["header"],    # Store header
+                }
+            )
+            for i, (emb, chunk) in enumerate(zip(embeddings, chunks_with_metadata))
+        ]
         self.index.upsert(vectors=vectors)
 
     def get_collection_stats(self):
