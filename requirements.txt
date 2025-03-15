@@ -1,6 +1,8 @@
-milvus
 pdfminer-six
 sentence-transformers
 ollama
 streamlit
-pymilvus
+pinecone-client
+pinecone
+python-dotenv
+pydantic-settings

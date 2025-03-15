@@ -1,7 +1,7 @@
 import streamlit as st
 import tempfile
 import os
-from config import settings
+from config.config import settings 
 from data_processing.pdf_loader_1 import load_pdf
 from data_processing.text_splitter import split_text
 from embedding.llama_embedder import LLamaEmbedder
